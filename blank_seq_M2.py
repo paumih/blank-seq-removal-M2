@@ -9,7 +9,7 @@ import time
 WHITE_PIXEL_VALUE = 255
 
 class BlankSeqRemoval:
-    def __init__(self,out_vid_name='',mov_detected_pixels_threshold=30, kernel_size=7, history = 10):
+    def __init__(self,out_vid_name='',mov_detected_pixels_threshold=30, kernel_size=7, lot_of_noise_det=False, history = 10,min_area=700):
         self.video_capture = cv2.VideoCapture(0)
         self.mog2 = cv2.createBackgroundSubtractorMOG2(
             history=history,
@@ -20,6 +20,8 @@ class BlankSeqRemoval:
         self.current_frame = None 
         self.previous_frame = None # initially there is no previous frame
         self.kernel_size = kernel_size
+        self.min_area = min_area
+        self.lot_of_noise_det = lot_of_noise_det
         self.cap_frame_width = int(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.cap_frame_height = int(self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
         codec = cv2.VideoWriter_fourcc(*'XVID')
@@ -32,37 +34,49 @@ class BlankSeqRemoval:
         cv2.line(frame, pt1=(0, 0), pt2=(frame.shape[1], frame.shape[0]), color=(0, 0, 255), thickness=8)
         cv2.line(frame, pt1=(0, frame.shape[0]), pt2=(frame.shape[1], 0), color=(0, 0, 255), thickness=8)
 
-    def mod(self):
-        while(True):            
-            # Capture the video frame by frame
-            _ , self.current_frame = self.video_capture.read()         
-            
-	        # resize the frame, convert it to grayscale, and blur it
-            self.current_frame = imutils.resize(self.current_frame, width=500)
-            current_frame_gray = cv2.cvtColor(self.current_frame, cv2.COLOR_BGR2GRAY)
-            current_frame_gray = cv2.GaussianBlur(current_frame_gray, (self.kernel_size, self.kernel_size), 0)
-            
-            # Do not initiate the processing if there's no previous frame so initiate the previous frame and then skip the first loop
-            if (self.previous_frame is None):
-                self.previous_frame = current_frame_gray
-                continue   
-            self.previous_frame = current_frame_gray
-            
+    def frame_diff(self):        
+        _ , self.previous_frame = self.video_capture.read()
+        while (True): 
+
+            _ , self.current_frame = self.video_capture.read()        
+
             # compute the absolute difference between the current frame and previous frame
-            frameDelta = cv2.absdiff(self.previous_frame, current_frame_gray)
-            thresh = cv2.threshold(frameDelta, thresh=25, maxval=255, type=cv2.THRESH_BINARY)[1]
+	        # convert it to grayscale, and blur it
+            diff = cv2.absdiff(self.previous_frame, self.current_frame)
+            gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+            blur = cv2.GaussianBlur(gray, (self.kernel_size,self.kernel_size), 0)
+            _ , thresh = cv2.threshold(blur, 20, 255, cv2.THRESH_BINARY)
             # dilate the thresholded image to fill in holes, then find contours on thresholded image
-            thresh = cv2.dilate(thresh, None, iterations=2)
+            dilated = cv2.dilate(thresh, None, iterations=3)          
+            contours, _ = cv2.findContours(dilated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-            white_pixels_count = np.sum(thresh)
-            if white_pixels_count < self.mov_detected_pixels_threshold:
-                self.mark_as_removed(self.current_frame)
+            movement_flag = False
+            for contour in contours:
+                if cv2.contourArea(contour) < self.min_area:
+                    continue
+                movement_flag = True
+
+            show_frame = np.copy(self.current_frame)
+            if self.lot_of_noise_det:
+                white_pixels_count = np.sum(dilated)
+                if not movement_flag and white_pixels_count < self.mov_detected_pixels_threshold:
+                    self.mark_as_removed(show_frame)
+                else:
+                    self.video_writer.write(self.current_frame)
             else:
-                self.video_writer.write(self.current_frame)
+                if not movement_flag:
+                    self.mark_as_removed(show_frame)
+                else:
+                    self.video_writer.write(self.current_frame)
 
-            cv2.imshow("Live Feed", self.current_frame)
-            cv2.imshow("Thresh", thresh)
-            cv2.imshow("Frame Delta", frameDelta)
+            # cv2.imshow("Live Contours", self.previous_frame)
+            cv2.drawContours(show_frame, contours, -1, (0, 255, 0), 2)
+            cv2.imshow("Live Feed", show_frame)
+            cv2.imshow("Dilated", dilated)
+            cv2.imshow("Frame Delta", gray)
+
+            self.previous_frame = self.current_frame
+
             if cv2.waitKey(1) & 0xFF == ord('q'): 
                 break
 
@@ -102,7 +116,7 @@ class BlankSeqRemoval:
         self.video_capture.release()
         cv2.destroyAllWindows() 
 
-bsr = BlankSeqRemoval(out_vid_name='out',kernel_size=21,history=100,mov_detected_pixels_threshold=1000)
-bsr.mod()
+bsr = BlankSeqRemoval(out_vid_name='out',kernel_size=5,history=100,mov_detected_pixels_threshold=20000,lot_of_noise_det=False, min_area= 2500)
+bsr.frame_diff()
 bsr.stop_capture()
 
