@@ -77,7 +77,7 @@ class BlankSeqRemoval:
 
             self.previous_frame = self.current_frame
 
-            if cv2.waitKey(1) & 0xFF == ord('q'): 
+            if cv2.waitKey(60) & 0xFF == ord('q'): 
                 break
 
     def mog(self):
@@ -116,7 +116,8 @@ class BlankSeqRemoval:
         self.video_capture.release()
         cv2.destroyAllWindows() 
 
-bsr = BlankSeqRemoval(out_vid_name='out',kernel_size=5,history=100,mov_detected_pixels_threshold=20000,lot_of_noise_det=False, min_area= 2500)
+bsr = BlankSeqRemoval(out_vid_name='out',kernel_size=5,history=1000,mov_detected_pixels_threshold=20000,lot_of_noise_det=False, min_area= 2500)
 bsr.frame_diff()
+# bsr.mog()
 bsr.stop_capture()
 
