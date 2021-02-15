@@ -2,12 +2,12 @@
 
 Try to detect ‘significant motion’ using frame differencing technique. The proposed solution is based upon the instantiating an object, called BlankSeqRemoval.  
 This object is instantiated with next parameters:  
-**out_vid_name**: string - name of the video file where unremoved sequences (frames) will be stored. This file will be saved in the current directory as .avi file. Default is to an empty string.
-**kernel_size**: int – is the magnitude of noise removal that will be applied for each frame for better further processing. The higher the value, the blurrier the frame will become, therefore less noise will be present in the frame and less unnecessary noise pixels will be present. This is useful for setting how much the pixel noise should be removed. Default is set to 7.
+**out_vid_name**: string - name of the video file where unremoved sequences (frames) will be stored. This file will be saved in the current directory as .avi file. Default is to an empty string.  
+**kernel_size**: int – is the magnitude of noise removal that will be applied for each frame for better further processing. The higher the value, the blurrier the frame will become, therefore less noise will be present in the frame and less unnecessary noise pixels will be present. This is useful for setting how much the pixel noise should be removed. Default is set to 7.  
 *kernel_size must be an odd positive integer
-**min_area**: int - is the minimum pixel area threshold that needs to be surpassed by a detected moving objects in order for the algorithm to make the distinction between motion or noise, e.g. falling leaf with small motion detected area is perceived as noise whereas a car which has a much higher motion detected area is perceived as significant motion. Default is 700.
-**lot_of_noise_det**: Boolean – is a flag that specifies if lots of small motion detected areas (noise) should be detected as significant motion. This is useful for sudden illumination changes. Default is False.
-**Mov_detected_pixels_threshold**: int – needs to be specified in case if lot_of_noise_det is set to True and therefore lot of noise detection is activated. Default is 20000
+**min_area**: int - is the minimum pixel area threshold that needs to be surpassed by a detected moving objects in order for the algorithm to make the distinction between motion or noise, e.g. falling leaf with small motion detected area is perceived as noise whereas a car which has a much higher motion detected area is perceived as significant motion. Default is 700.  
+**lot_of_noise_det**: Boolean – is a flag that specifies if lots of small motion detected areas (noise) should be detected as significant motion. This is useful for sudden illumination changes. Default is False.  
+**Mov_detected_pixels_threshold**: int – needs to be specified in case if lot_of_noise_det is set to True and therefore lot of noise detection is activated. Default is 20000  
 
 The BlankSeqRemoval object contains a method called frame_diff() that is responsible with detecting motion using frame differencing technique applied in real-time between the current frame and the previous frame.  
 

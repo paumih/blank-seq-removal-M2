@@ -10,7 +10,7 @@ WHITE_PIXEL_VALUE = 255
 
 class BlankSeqRemoval:
     def __init__(self,out_vid_name='',mov_detected_pixels_threshold=30, kernel_size=7, lot_of_noise_det=False, history = 10,min_area=700):
-        self.video_capture = cv2.VideoCapture(1)
+        self.video_capture = cv2.VideoCapture(0)
         self.mog2 = cv2.createBackgroundSubtractorMOG2(
             history=history,
             varThreshold=50,
